@@ -31,5 +31,7 @@ setup(
     },
     install_requires=[
         'HTSQL>=2.3,<3',
+        'savReaderWriter>=3.4.2,<4',
+        'numpy'  # installing numpy silences a warning from savReaderWriter
     ],
 )

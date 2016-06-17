@@ -27,7 +27,7 @@ from htsql.core.util import listof
 
 
 SPSS_MAX_STRING_LENGTH = 32767
-SPSS_MIME_TYPE = 'application/x-spss-sav'
+SPSS_MIME_TYPE = 'application/x-spss-zsav'
 SPSS_GREGORIAN_OFFSET = (datetime.datetime.fromtimestamp(0) - datetime.datetime(1582, 10, 14)).total_seconds()
 
 
@@ -181,11 +181,17 @@ class BooleanToSPSS(ToSPSS):
 
     def var_types(self):
         profile = self.profiles[-1]
-        return {profile.tag: 5}
+        return {profile.tag: 0}
 
     def formats(self):
         profile = self.profiles[-1]
-        return {profile.tag: 'A5'}
+        return {profile.tag: 'N1'}
+
+    def cells(self, value):
+        if value is None:
+            yield [value]
+        else:
+            yield [int(value)]
 
 
 class IntegerToSPSS(ToSPSS):
@@ -245,7 +251,7 @@ class DateToSPSS(ToSPSS):
 
     def formats(self):
         profile = self.profiles[-1]
-        return {profile.tag: 'SDATE'}
+        return {profile.tag: 'DATE11'}
 
     def cells(self, value):
         if value is None:
@@ -265,7 +271,7 @@ class TimeToSPSS(ToSPSS):
     def formats(self):
         profile = self.profiles[-1]
 
-        return {profile.tag: 'TIME'}
+        return {profile.tag: 'TIME10'}
 
     def cells(self, value):
         if value is None:
@@ -323,21 +329,6 @@ def make_name(meta):
     return filename
 
 
-class EmitSPSSHeaders(EmitHeaders):
-    def __call__(self):
-        yield (
-            'Content-Type',
-            self.content_type,
-        )
-        yield (
-            'Content-Disposition',
-            'attachment; filename="%s.%s"' % (
-                make_name(self.meta),
-                self.file_extension,
-            ),
-        )
-
-
 class SPSSFormat(Format):
     pass
 
@@ -352,11 +343,24 @@ class AcceptSPSS(Accept):
     format = SPSSFormat
 
 
-class EmitSPSSHeaders(EmitSPSSHeaders):
+class EmitSPSSHeaders(EmitHeaders):
     adapt(SPSSFormat)
 
     content_type = SPSS_MIME_TYPE
-    file_extension = 'sav'
+    file_extension = 'zsav'
+
+    def __call__(self):
+        yield (
+            'Content-Type',
+            self.content_type,
+        )
+        yield (
+            'Content-Disposition',
+            'attachment; filename="%s.%s"' % (
+                make_name(self.meta),
+                self.file_extension,
+            ),
+        )
 
 
 class EmitSPSS(Emit):
@@ -369,7 +373,7 @@ class EmitSPSS(Emit):
         yield output.getvalue()
 
     def render(self, stream, product):
-        output_file, output_path = tempfile.mkstemp(suffix='.sav')
+        output_file, output_path = tempfile.mkstemp(suffix='.zsav')
 
         try:
             writer_kwargs = {
