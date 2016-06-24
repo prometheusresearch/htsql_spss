@@ -27,7 +27,7 @@ from htsql.core.util import listof
 
 
 SPSS_MAX_STRING_LENGTH = 32767
-SPSS_MIME_TYPE = 'application/x-spss-zsav'
+SPSS_MIME_TYPE = 'application/x-spss-sav'
 SPSS_GREGORIAN_OFFSET = (datetime.datetime.fromtimestamp(0) - datetime.datetime(1582, 10, 14)).total_seconds()
 
 
@@ -170,28 +170,11 @@ class SimpleToSPSS(ToSPSS):
         UntypedDomain,
         TextDomain,
         EnumDomain,
+        BooleanDomain
     )
 
     def cells(self, value):
         yield [value]
-
-
-class BooleanToSPSS(ToSPSS):
-    adapt(BooleanDomain)
-
-    def var_types(self):
-        profile = self.profiles[-1]
-        return {profile.tag: 0}
-
-    def formats(self):
-        profile = self.profiles[-1]
-        return {profile.tag: 'N1'}
-
-    def cells(self, value):
-        if value is None:
-            yield [value]
-        else:
-            yield [int(value)]
 
 
 class IntegerToSPSS(ToSPSS):
@@ -277,8 +260,7 @@ class TimeToSPSS(ToSPSS):
         if value is None:
             yield [None]
         else:
-            seconds = (value - datetime.time.min).total_seconds()
-            yield [seconds]
+            yield [value]
 
 
 class DateTimeToSPSS(ToSPSS):
@@ -347,7 +329,7 @@ class EmitSPSSHeaders(EmitHeaders):
     adapt(SPSSFormat)
 
     content_type = SPSS_MIME_TYPE
-    file_extension = 'zsav'
+    file_extension = 'sav'
 
     def __call__(self):
         yield (
@@ -373,7 +355,7 @@ class EmitSPSS(Emit):
         yield output.getvalue()
 
     def render(self, stream, product):
-        output_file, output_path = tempfile.mkstemp(suffix='.zsav')
+        output_file, output_path = tempfile.mkstemp(suffix='.sav')
 
         try:
             writer_kwargs = {

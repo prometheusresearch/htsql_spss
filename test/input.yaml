@@ -1,0 +1,22 @@
+title: HTSQL_SPSS
+tests:
+
+- coverage: setup.cfg
+  auto-data: true
+  source:
+    - htsql_spss
+
+- sh: pip install -q -e ./
+- sh: pip install -q HTSQL-PGSQL>=2.3.3.20160506
+
+- mkdir: sandbox
+- sh: dropdb htsql_spss_test
+- sh: createdb htsql_spss_test
+- sh: psql htsql_spss_test --file ./test/test_schema.sql
+- sh: psql htsql_spss_test --file ./test/test_data.sql
+- doctest: ./test/verify.rst
+
+- coverage-check: 95.0
+- coverage-report: ./build/coverage
+
+- rmdir: sandbox
