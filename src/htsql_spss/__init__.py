@@ -52,14 +52,11 @@ class ToSPSS(Adapter):
     def var_names(self):
         return [self.profiles[-1].tag]
 
-    def var_types(self):
-        profile = self.profiles[-1]
-        return {profile.tag: SPSS_MAX_STRING_LENGTH}
+    def var_types(self, rows):
+        raise NotImplementedError
 
-    def formats(self):
-        profile = self.profiles[-1]
-        format = 'A' + str(SPSS_MAX_STRING_LENGTH)
-        return {profile.tag: format}
+    def formats(self, rows):
+        raise NotImplementedError
 
     def column_widths(self):
         profile = self.profiles[-1]
@@ -91,16 +88,16 @@ class RecordToSPSS(ToSPSS):
             row.extend(field_to_spss.var_names())
         return row
 
-    def var_types(self):
+    def var_types(self, rows):
         types = {}
         for field_to_spss in self.fields_to_spss:
-            types.update(field_to_spss.var_types())
+            types.update(field_to_spss.var_types(rows))
         return types
 
-    def formats(self):
+    def formats(self, rows):
         formats = {}
         for field_to_spss in self.fields_to_spss:
-            formats.update(field_to_spss.formats())
+            formats.update(field_to_spss.formats(rows))
         return formats
 
     def column_widths(self):
@@ -145,11 +142,11 @@ class ListToSPSS(ToSPSS):
     def var_names(self):
         return self.item_to_spss.var_names()
 
-    def var_types(self):
-        return self.item_to_spss.var_types()
+    def var_types(self, rows):
+        return self.item_to_spss.var_types(rows)
 
-    def formats(self):
-        return self.item_to_spss.formats()
+    def formats(self, rows):
+        return self.item_to_spss.formats(rows)
 
     def column_widths(self):
         return self.item_to_spss.column_widths()
@@ -166,31 +163,64 @@ class ListToSPSS(ToSPSS):
 
 class SimpleToSPSS(ToSPSS):
     adapt_many(
-        NumberDomain,
         UntypedDomain,
         TextDomain,
         EnumDomain,
-        BooleanDomain
     )
+
+    def var_types(self, rows):
+        profile = self.profiles[-1]
+
+        max_len = 0
+        for row in rows:
+            value = getattr(row, profile.tag)
+            max_len = max(max_len, len(str(value)))
+
+        max_len = min(max_len, SPSS_MAX_STRING_LENGTH)
+        return {profile.tag: max_len}
+
+    def formats(self, rows):
+        profile = self.profiles[-1]
+
+        max_len = 0
+        for row in rows:
+            value = getattr(row, profile.tag)
+            max_len = max(max_len, len(str(value)))
+
+        max_len = min(max_len, SPSS_MAX_STRING_LENGTH)
+        format = 'A' + str(max_len)
+        return {profile.tag: format}
 
     def cells(self, value):
         yield [value]
 
 
+class BooleanToSPSS(ToSPSS):
+    adapt(BooleanDomain)
+
+    def var_types(self, rows):
+        profile = self.profiles[-1]
+        return {profile.tag: 5}
+
+    def formats(self, rows):
+        profile = self.profiles[-1]
+        return {profile.tag: 'A5'}
+
+
 class IntegerToSPSS(ToSPSS):
     adapt(IntegerDomain)
 
-    def var_types(self):
+    def var_types(self, rows):
         profile = self.profiles[-1]
         return {profile.tag: 0}
 
-    def formats(self):
+    def formats(self, rows):
         profile = self.profiles[-1]
         return {profile.tag: 'F40'}
 
 
 class FloatToSPSS(ToSPSS):
-    adapt(FloatDomain)
+    adapt_many(FloatDomain)
 
     def cells(self, value):
         if value is None or math.isinf(value) or math.isnan(value):
@@ -198,11 +228,11 @@ class FloatToSPSS(ToSPSS):
         else:
             yield [value]
 
-    def var_types(self):
+    def var_types(self, rows):
         profile = self.profiles[-1]
         return {profile.tag: 0}
 
-    def formats(self):
+    def formats(self, rows):
         profile = self.profiles[-1]
         return {profile.tag: 'F40.16'}
 
@@ -216,11 +246,11 @@ class DecimalToSPSS(ToSPSS):
         else:
             yield [value]
 
-    def var_types(self):
+    def var_types(self, rows):
         profile = self.profiles[-1]
         return {profile.tag: 0}
 
-    def formats(self):
+    def formats(self, rows):
         profile = self.profiles[-1]
         return {profile.tag: 'F40.16'}
 
@@ -228,11 +258,11 @@ class DecimalToSPSS(ToSPSS):
 class DateToSPSS(ToSPSS):
     adapt(DateDomain)
 
-    def var_types(self):
+    def var_types(self, rows):
         profile = self.profiles[-1]
         return {profile.tag: 0}
 
-    def formats(self):
+    def formats(self, rows):
         profile = self.profiles[-1]
         return {profile.tag: 'DATE11'}
 
@@ -247,32 +277,32 @@ class DateToSPSS(ToSPSS):
 class TimeToSPSS(ToSPSS):
     adapt(TimeDomain)
 
-    def var_types(self):
+    def var_types(self, rows):
         profile = self.profiles[-1]
         return {profile.tag: 0}
 
-    def formats(self):
+    def formats(self, rows):
         profile = self.profiles[-1]
-
         return {profile.tag: 'TIME10'}
 
     def cells(self, value):
         if value is None:
             yield [None]
         else:
-            yield [value]
+            # value is a datetime.time object
+            seconds = value.hour * 3600 + value.minute * 60 + value.second + value.microsecond / 1.0e6
+            yield [seconds]
 
 
 class DateTimeToSPSS(ToSPSS):
     adapt(DateTimeDomain)
 
-    def var_types(self):
+    def var_types(self, rows):
         profile = self.profiles[-1]
         return {profile.tag: 0}
 
-    def formats(self):
+    def formats(self, rows):
         profile = self.profiles[-1]
-
         return {profile.tag: 'DATETIME22'}
 
     def cells(self, value):
@@ -361,8 +391,8 @@ class EmitSPSS(Emit):
             writer_kwargs = {
                 "savFileName": output_path,
                 "varNames": product.var_names(),
-                "varTypes": product.var_types(),
-                "formats": product.formats(),
+                "varTypes": product.var_types(self.data),
+                "formats": product.formats(self.data),
                 "columnWidths": product.column_widths(),
                 "ioUtf8": True,
             }

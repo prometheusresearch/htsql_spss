@@ -32,20 +32,20 @@ Check individual table::
     [9.0, 'B39J6014']
     [10.0, 'R99D0886']
 
-.. Check sample table::
+Check sample table::
 
-..     >>> run_query("/sample /:spss", output_path='sandbox/sample.sav')
-..     >>> with SavReader('sandbox/sample.sav') as reader:
-..     ...     for line in reader:
-..     ...         print(line)
-..     [1.0, 1.0, 3.0, 1.0, 'False', '2016-06-18', '01:02:03', '2016-06-18 01:02:03']
-..     [2.0, 3.0, 2.0, 1.0, 'True', None, None, None]
-..     [3.0, 1.0, 2.0, 1.0, 'False', None, None, None]
-..     [4.0, 1.0, 2.0, 2.0, 'False', None, None, None]
-..     [5.0, 1.0, 9.0, 1.0, 'False', None, None, None]
-..     [6.0, 1.0, 9.0, 2.0, 'False', None, None, None]
-..     [7.0, 4.0, 9.0, 1.0, 'False', None, None, None]
-..     [8.0, 1.0, 7.0, 1.0, 'False', None, None, None]
+    >>> run_query("/sample /:spss", output_path='sandbox/sample.sav')
+    >>> with SavReader('sandbox/sample.sav') as reader:
+    ...     for line in reader:
+    ...         print(line)
+    [1.0, 1.0, 3.0, 1.0, 'false', '2016-06-18', '1:02:03.004005', '2016-06-18 01:02:03']
+    [2.0, 3.0, 2.0, 1.0, 'true', None, None, None]
+    [3.0, 1.0, 2.0, 1.0, 'false', None, None, None]
+    [4.0, 1.0, 2.0, 2.0, 'false', None, None, None]
+    [5.0, 1.0, 9.0, 1.0, 'false', None, None, None]
+    [6.0, 1.0, 9.0, 2.0, 'false', None, None, None]
+    [7.0, 4.0, 9.0, 1.0, 'false', None, None, None]
+    [8.0, 1.0, 7.0, 1.0, 'false', None, None, None]
 
 Check tube table::
 
