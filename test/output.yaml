@@ -20,5 +20,23 @@ tests:
     CREATE TABLE
     CREATE TYPE
     CREATE TABLE
+    ALTER TABLE
+    ALTER TABLE
+    ALTER TABLE
+    ALTER TABLE
+    ALTER TABLE
+    ALTER TABLE
+    ALTER TABLE
+    ALTER TABLE
+    ALTER TABLE
+    ALTER TABLE
+    ALTER TABLE
+    ALTER TABLE
+    CREATE INDEX
+    CREATE INDEX
+    CREATE INDEX
+    ALTER TABLE
+    ALTER TABLE
+    ALTER TABLE
 - sh: psql htsql_spss_test --file ./test/test_data.sql
   stdout: ''

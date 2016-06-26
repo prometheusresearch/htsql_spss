@@ -17,7 +17,7 @@ Setup::
     
 Check individual table::
 
-    >>> run_query("/individual /:spss", output_path='sandbox/individual.sav')
+    >>> run_query("/individual.sort(id) /:spss", output_path='sandbox/individual.sav')
     >>> with SavReader('sandbox/individual.sav') as reader:
     ...     for line in reader:
     ...         print(line)
@@ -34,7 +34,7 @@ Check individual table::
 
 Check sample table::
 
-    >>> run_query("/sample /:spss", output_path='sandbox/sample.sav')
+    >>> run_query("/sample.sort(id) /:spss", output_path='sandbox/sample.sav')
     >>> with SavReader('sandbox/sample.sav') as reader:
     ...     for line in reader:
     ...         print(line)
@@ -49,7 +49,7 @@ Check sample table::
 
 Check tube table::
 
-    >>> run_query("/tube /:spss", output_path='sandbox/tube.sav')
+    >>> run_query("/tube.sort(id) /:spss", output_path='sandbox/tube.sav')
     >>> with SavReader('sandbox/tube.sav') as reader:
     ...     for line in reader:
     ...         print(line)
@@ -57,3 +57,18 @@ Check tube table::
     [2.0, 6.0, 1.0, 5.0, 'ml', 'Freezer 1']
     [3.0, 6.0, 2.0, 3.0, 'ml', 'Freezer 2']
 
+Check a nested query::
+
+    >>> run_query("/sample.sort(id){*, /tube.sort(id)} /:spss", output_path='sandbox/sample_tube.sav')
+    >>> with SavReader('sandbox/sample_tube.sav') as reader:
+    ...     for line in reader:
+    ...         print(line)
+    [1.0, 1.0, 3.0, 1.0, 'false', '2016-06-18', '1:02:03.004005', '2016-06-18 01:02:03', 1.0, 1.0, 1.0, 5.0, 'ml', 'Freezer 1']
+    [2.0, 3.0, 2.0, 1.0, 'true', None, None, None, None, None, None, None, 'None', 'None']
+    [3.0, 1.0, 2.0, 1.0, 'false', None, None, None, None, None, None, None, 'None', 'None']
+    [4.0, 1.0, 2.0, 2.0, 'false', None, None, None, None, None, None, None, 'None', 'None']
+    [5.0, 1.0, 9.0, 1.0, 'false', None, None, None, None, None, None, None, 'None', 'None']
+    [6.0, 1.0, 9.0, 2.0, 'false', None, None, None, 2.0, 6.0, 1.0, 5.0, 'ml', 'Freezer 1']
+    [None, None, None, None, 'None', None, None, None, 3.0, 6.0, 2.0, 3.0, 'ml', 'Freezer 2']
+    [7.0, 4.0, 9.0, 1.0, 'false', None, None, None, None, None, None, None, 'None', 'None']
+    [8.0, 1.0, 7.0, 1.0, 'false', None, None, None, None, None, None, None, 'None', 'None']

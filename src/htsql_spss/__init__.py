@@ -22,7 +22,7 @@ from htsql.core.fmt.emit import EmitHeaders, Emit
 from htsql.core.domain import Domain, BooleanDomain, NumberDomain, \
     FloatDomain, DecimalDomain, TextDomain, EnumDomain, DateDomain, \
     TimeDomain, DateTimeDomain, ListDomain, RecordDomain, UntypedDomain, \
-    VoidDomain, OpaqueDomain, IntegerDomain, Profile
+    VoidDomain, IntegerDomain, Profile
 from htsql.core.util import listof
 
 
@@ -46,27 +46,21 @@ class ToSPSS(Adapter):
         self.profiles = profiles
         self.width = 1
 
+    def sav_config(self, data):
+        sav_config = {}
+        sav_config['var_names'] = []
+        sav_config['var_types'] = {}
+        sav_config['formats'] = {}
+        sav_config['column_widths'] = {}
+        return sav_config
+
     def __call__(self):
         return self
 
-    def var_names(self):
-        return [self.profiles[-1].tag]
-
-    def var_types(self, rows):
-        raise NotImplementedError
-
-    def formats(self, rows):
-        raise NotImplementedError
-
-    def column_widths(self):
-        profile = self.profiles[-1]
-        return {profile.tag: 10}
-
-    def cells(self, value):
-        if value is None:
-            yield [None]
-        else:
-            yield [self.domain.dump(value)]
+    def widths(self, data):
+        if data is None:
+            return [0]
+        return [len(self.domain.dump(data))]
 
 
 class RecordToSPSS(ToSPSS):
@@ -82,53 +76,54 @@ class RecordToSPSS(ToSPSS):
         for field_to_spss in self.fields_to_spss:
             self.width += field_to_spss.width
 
-    def var_names(self):
-        row = []
-        for field_to_spss in self.fields_to_spss:
-            row.extend(field_to_spss.var_names())
-        return row
+    def sav_config(self, record):
+        sav_config = super(RecordToSPSS, self).sav_config(record)
 
-    def var_types(self, rows):
-        types = {}
-        for field_to_spss in self.fields_to_spss:
-            types.update(field_to_spss.var_types(rows))
-        return types
+        if record is None:
+            record = [None]*self.width
 
-    def formats(self, rows):
-        formats = {}
-        for field_to_spss in self.fields_to_spss:
-            formats.update(field_to_spss.formats(rows))
-        return formats
+        for item, field_to_spss in zip(record, self.fields_to_spss):
+            # import pdb; pdb.set_trace()
 
-    def column_widths(self):
-        widths = {}
-        for field_to_spss in self.fields_to_spss:
-            widths.update(field_to_spss.column_widths())
-        return widths
+            field_sav_config = field_to_spss.sav_config(item)
+            sav_config['var_names'].extend(field_sav_config['var_names'])
+            sav_config['var_types'].update(field_sav_config['var_types'])
+            sav_config['formats'].update(field_sav_config['formats'])
+            sav_config['column_widths'].update(field_sav_config['column_widths'])
 
-    def cells(self, value):
+        return sav_config
+
+    def cells(self, record):
         if not self.width:
             return
-        if value is None:
+        if record is None:
             yield [None] * self.width
         else:
-            streams = [
-                (field_to_spss.cells(item), field_to_spss.width)
-                for item, field_to_spss in zip(value, self.fields_to_spss)
+            cell_streams = [
+                (field_to_spss.cells(field_value), field_to_spss.width)
+                for field_value, field_to_spss in zip(record, self.fields_to_spss)
             ]
             is_done = False
             while not is_done:
                 is_done = True
                 row = []
-                for stream, width in streams:
-                    subrow = next(stream, None)
+                for cell_stream, field_width in cell_streams:
+                    subrow = next(cell_stream, None)
                     if subrow is None:
-                        subrow = [None] * width
+                        subrow = [None] * field_width
                     else:
                         is_done = False
                     row.extend(subrow)
                 if not is_done:
                     yield row
+
+    def widths(self, data):
+        widths = []
+        if data is None:
+            data = [None]*self.width
+        for item, field_to_spss in zip(data, self.fields_to_spss):
+            widths += field_to_spss.widths(item)
+        return widths
 
 
 class ListToSPSS(ToSPSS):
@@ -139,26 +134,38 @@ class ListToSPSS(ToSPSS):
         self.item_to_spss = to_spss(domain.item_domain, profiles)
         self.width = self.item_to_spss.width
 
-    def var_names(self):
-        return self.item_to_spss.var_names()
+    def sav_config(self, list_value):
+        sav_config = super(ListToSPSS, self).sav_config(list_value)
 
-    def var_types(self, rows):
-        return self.item_to_spss.var_types(rows)
+        for item in list_value:
+            item_sav_config = self.item_to_spss.sav_config(item)
+            for var_name in item_sav_config['var_names']:
+                if var_name not in sav_config['var_names']:
+                    sav_config['var_names'].append(var_name)
+            sav_config['var_types'].update(item_sav_config['var_types'])
+            sav_config['formats'].update(item_sav_config['formats'])
+            sav_config['column_widths'].update(item_sav_config['column_widths'])
 
-    def formats(self, rows):
-        return self.item_to_spss.formats(rows)
+        return sav_config
 
-    def column_widths(self):
-        return self.item_to_spss.column_widths()
-
-    def cells(self, value):
+    def cells(self, list_value):
         if not self.width:
             return
-        if value is not None:
+        if list_value is not None:
             item_to_cells = self.item_to_spss.cells
-            for item in value:
-                for row in item_to_cells(item):
-                    yield row
+            for item in list_value:
+                for cell in item_to_cells(item):
+                    yield cell
+
+    def widths(self, data):
+        widths = [0]*self.width
+        if not data:
+            data = [None]
+        for item in data:
+            widths = [max(width, item_width)
+                      for width, item_width
+                            in zip(widths, self.item_to_spss.widths(item))]
+        return widths
 
 
 class SimpleToSPSS(ToSPSS):
@@ -168,28 +175,23 @@ class SimpleToSPSS(ToSPSS):
         EnumDomain,
     )
 
-    def var_types(self, rows):
+    def sav_config(self, data):
+        sav_config = super(SimpleToSPSS, self).sav_config(data)
+
         profile = self.profiles[-1]
+        column_id = '__'.join(p.tag for p in self.profiles)
 
-        max_len = 0
-        for row in rows:
-            value = getattr(row, profile.tag)
-            max_len = max(max_len, len(str(value)))
+        sav_config['var_names'] = [column_id]
+        # import pdb; pdb.set_trace()
 
+        max_len = self.widths(data)[0]
         max_len = min(max_len, SPSS_MAX_STRING_LENGTH)
-        return {profile.tag: max_len}
 
-    def formats(self, rows):
-        profile = self.profiles[-1]
+        sav_config['var_types'] = {column_id: max_len}
+        sav_config['formats'] = {column_id: 'A' + str(max_len)}
+        sav_config['column_widths'] = {column_id: 10}
 
-        max_len = 0
-        for row in rows:
-            value = getattr(row, profile.tag)
-            max_len = max(max_len, len(str(value)))
-
-        max_len = min(max_len, SPSS_MAX_STRING_LENGTH)
-        format = 'A' + str(max_len)
-        return {profile.tag: format}
+        return sav_config
 
     def cells(self, value):
         yield [value]
@@ -198,29 +200,58 @@ class SimpleToSPSS(ToSPSS):
 class BooleanToSPSS(ToSPSS):
     adapt(BooleanDomain)
 
-    def var_types(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 5}
+    def sav_config(self, data):
+        sav_config = super(BooleanToSPSS, self).sav_config(data)
 
-    def formats(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 'A5'}
+        column_id = '__'.join(p.tag for p in self.profiles)
+
+        sav_config['var_names'] = [column_id]
+        sav_config['var_types'] = {column_id: 5}
+        sav_config['formats'] = {column_id: 'A5'}
+        sav_config['column_widths'] = {column_id: 10}
+
+        return sav_config
+
+    def cells(self, value):
+        yield [self.domain.dump(value)]
 
 
 class IntegerToSPSS(ToSPSS):
     adapt(IntegerDomain)
 
-    def var_types(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 0}
+    def sav_config(self, data):
+        sav_config = super(IntegerToSPSS, self).sav_config(data)
 
-    def formats(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 'F40'}
+        column_id = '__'.join(p.tag for p in self.profiles)
+
+        sav_config['var_names'] = [column_id]
+        sav_config['var_types'] = {column_id: 0}
+        sav_config['formats'] = {column_id: 'F40'}
+        sav_config['column_widths'] = {column_id: 10}
+
+        return sav_config
+
+    def cells(self, value):
+        if value is None:
+            yield [None]
+        else:
+            yield [self.domain.dump(value)]
 
 
 class FloatToSPSS(ToSPSS):
     adapt_many(FloatDomain)
+
+    def sav_config(self, data):
+        sav_config = super(FloatToSPSS, self).sav_config(data)
+
+        column_id = '__'.join(p.tag for p in self.profiles)
+
+        sav_config['var_names'] = [column_id]
+        sav_config['var_types'] = {column_id: 0}
+        sav_config['formats'] = {column_id: 'F40.16'}
+        sav_config['column_widths'] = {column_id: 10}
+
+        return sav_config
 
     def cells(self, value):
         if value is None or math.isinf(value) or math.isnan(value):
@@ -228,17 +259,21 @@ class FloatToSPSS(ToSPSS):
         else:
             yield [value]
 
-    def var_types(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 0}
-
-    def formats(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 'F40.16'}
-
 
 class DecimalToSPSS(ToSPSS):
     adapt(DecimalDomain)
+
+    def sav_config(self, data):
+        sav_config = super(DecimalToSPSS, self).sav_config(data)
+
+        column_id = '__'.join(p.tag for p in self.profiles)
+
+        sav_config['var_names'] = [column_id]
+        sav_config['var_types'] = {column_id: 0}
+        sav_config['formats'] = {column_id: 'F40.16'}
+        sav_config['column_widths'] = {column_id: 10}
+
+        return sav_config
 
     def cells(self, value):
         if value is None or not value.is_finite():
@@ -246,25 +281,21 @@ class DecimalToSPSS(ToSPSS):
         else:
             yield [value]
 
-    def var_types(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 0}
-
-    def formats(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 'F40.16'}
-
 
 class DateToSPSS(ToSPSS):
     adapt(DateDomain)
 
-    def var_types(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 0}
+    def sav_config(self, data):
+        sav_config = super(DateToSPSS, self).sav_config(data)
 
-    def formats(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 'DATE11'}
+        column_id = '__'.join(p.tag for p in self.profiles)
+
+        sav_config['var_names'] = [column_id]
+        sav_config['var_types'] = {column_id: 0}
+        sav_config['formats'] = {column_id: 'DATE11'}
+        sav_config['column_widths'] = {column_id: 10}
+
+        return sav_config
 
     def cells(self, value):
         if value is None:
@@ -277,13 +308,17 @@ class DateToSPSS(ToSPSS):
 class TimeToSPSS(ToSPSS):
     adapt(TimeDomain)
 
-    def var_types(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 0}
+    def sav_config(self, data):
+        sav_config = super(TimeToSPSS, self).sav_config(data)
 
-    def formats(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 'TIME10'}
+        column_id = '__'.join(p.tag for p in self.profiles)
+
+        sav_config['var_names'] = [column_id]
+        sav_config['var_types'] = {column_id: 0}
+        sav_config['formats'] = {column_id: 'TIME10'}
+        sav_config['column_widths'] = {column_id: 10}
+
+        return sav_config
 
     def cells(self, value):
         if value is None:
@@ -297,13 +332,17 @@ class TimeToSPSS(ToSPSS):
 class DateTimeToSPSS(ToSPSS):
     adapt(DateTimeDomain)
 
-    def var_types(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 0}
+    def sav_config(self, data):
+        sav_config = super(DateTimeToSPSS, self).sav_config(data)
 
-    def formats(self, rows):
-        profile = self.profiles[-1]
-        return {profile.tag: 'DATETIME22'}
+        column_id = '__'.join(p.tag for p in self.profiles)
+
+        sav_config['var_names'] = [column_id]
+        sav_config['var_types'] = {column_id: 0}
+        sav_config['formats'] = {column_id: 'DATETIME22'}
+        sav_config['column_widths'] = {column_id: 10}
+
+        return sav_config
 
     def cells(self, value):
         if value is None:
@@ -311,21 +350,6 @@ class DateTimeToSPSS(ToSPSS):
         else:
             unix_timestamp = (value - datetime.datetime.fromtimestamp(0)).total_seconds()
             yield [unix_timestamp + SPSS_GREGORIAN_OFFSET]
-
-
-class OpaqueToSPSS(ToSPSS):
-    adapt(OpaqueDomain)
-
-    def cells(self, value):
-        if value is None:
-            yield [None]
-            return
-        if not isinstance(value, unicode):
-            try:
-                value = str(value).decode('utf-8')
-            except UnicodeDecodeError:
-                value = unicode(repr(value))
-        yield [value]
 
 
 to_spss = ToSPSS.__invoke__  # pylint: disable=invalid-name
@@ -388,17 +412,22 @@ class EmitSPSS(Emit):
         output_file, output_path = tempfile.mkstemp(suffix='.sav')
 
         try:
+            sav_config = product.sav_config(self.data)
+
+            # import pdb; pdb.set_trace()
+
             writer_kwargs = {
-                "savFileName": output_path,
-                "varNames": product.var_names(),
-                "varTypes": product.var_types(self.data),
-                "formats": product.formats(self.data),
-                "columnWidths": product.column_widths(),
-                "ioUtf8": True,
+                'savFileName': output_path,
+                'varNames': sav_config['var_names'],
+                'varTypes': sav_config['var_types'],
+                'formats': sav_config['formats'],
+                'columnWidths': sav_config['column_widths'],
+                'ioUtf8': True
             }
 
             with savReaderWriter.SavWriter(**writer_kwargs) as writer:
                 for record in product.cells(self.data):
+                    # import pdb; pdb.set_trace()
                     writer.writerow(record)
 
             with open(output_path, 'rb') as output_file:
