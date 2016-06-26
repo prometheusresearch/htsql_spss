@@ -72,3 +72,18 @@ Check a nested query::
     [None, None, None, None, 'None', None, None, None, 3.0, 6.0, 2.0, 3.0, 'ml', 'Freezer 2']
     [7.0, 4.0, 9.0, 1.0, 'false', None, None, None, None, None, None, None, 'None', 'None']
     [8.0, 1.0, 7.0, 1.0, 'false', None, None, None, None, None, None, None, 'None', 'None']
+
+Check a nested query::
+
+    >>> run_query("/sample.sort(id){code, individual.code} /:spss", output_path='sandbox/sample_individual.sav')
+    >>> with SavReader('sandbox/sample_individual.sav') as reader:
+    ...     for line in reader:
+    ...         print(line)
+    [1.0, 'B78M1629']
+    [1.0, 'W19K8934']
+    [1.0, 'W19K8934']
+    [2.0, 'W19K8934']
+    [1.0, 'B39J6014']
+    [2.0, 'B39J6014']
+    [1.0, 'B39J6014']
+    [1.0, 'W34P0948']

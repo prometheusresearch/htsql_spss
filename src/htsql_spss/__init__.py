@@ -83,8 +83,6 @@ class RecordToSPSS(ToSPSS):
             record = [None]*self.width
 
         for item, field_to_spss in zip(record, self.fields_to_spss):
-            # import pdb; pdb.set_trace()
-
             field_sav_config = field_to_spss.sav_config(item)
             sav_config['var_names'].extend(field_sav_config['var_names'])
             sav_config['var_types'].update(field_sav_config['var_types'])
@@ -179,10 +177,9 @@ class SimpleToSPSS(ToSPSS):
         sav_config = super(SimpleToSPSS, self).sav_config(data)
 
         profile = self.profiles[-1]
-        column_id = '__'.join(p.tag for p in self.profiles)
+        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
 
         sav_config['var_names'] = [column_id]
-        # import pdb; pdb.set_trace()
 
         max_len = self.widths(data)[0]
         max_len = min(max_len, SPSS_MAX_STRING_LENGTH)
@@ -203,7 +200,7 @@ class BooleanToSPSS(ToSPSS):
     def sav_config(self, data):
         sav_config = super(BooleanToSPSS, self).sav_config(data)
 
-        column_id = '__'.join(p.tag for p in self.profiles)
+        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 5}
@@ -222,7 +219,7 @@ class IntegerToSPSS(ToSPSS):
     def sav_config(self, data):
         sav_config = super(IntegerToSPSS, self).sav_config(data)
 
-        column_id = '__'.join(p.tag for p in self.profiles)
+        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 0}
@@ -244,7 +241,7 @@ class FloatToSPSS(ToSPSS):
     def sav_config(self, data):
         sav_config = super(FloatToSPSS, self).sav_config(data)
 
-        column_id = '__'.join(p.tag for p in self.profiles)
+        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 0}
@@ -266,7 +263,7 @@ class DecimalToSPSS(ToSPSS):
     def sav_config(self, data):
         sav_config = super(DecimalToSPSS, self).sav_config(data)
 
-        column_id = '__'.join(p.tag for p in self.profiles)
+        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 0}
@@ -288,7 +285,7 @@ class DateToSPSS(ToSPSS):
     def sav_config(self, data):
         sav_config = super(DateToSPSS, self).sav_config(data)
 
-        column_id = '__'.join(p.tag for p in self.profiles)
+        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 0}
@@ -311,7 +308,7 @@ class TimeToSPSS(ToSPSS):
     def sav_config(self, data):
         sav_config = super(TimeToSPSS, self).sav_config(data)
 
-        column_id = '__'.join(p.tag for p in self.profiles)
+        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 0}
@@ -335,7 +332,7 @@ class DateTimeToSPSS(ToSPSS):
     def sav_config(self, data):
         sav_config = super(DateTimeToSPSS, self).sav_config(data)
 
-        column_id = '__'.join(p.tag for p in self.profiles)
+        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 0}
@@ -414,8 +411,6 @@ class EmitSPSS(Emit):
         try:
             sav_config = product.sav_config(self.data)
 
-            # import pdb; pdb.set_trace()
-
             writer_kwargs = {
                 'savFileName': output_path,
                 'varNames': sav_config['var_names'],
@@ -427,7 +422,6 @@ class EmitSPSS(Emit):
 
             with savReaderWriter.SavWriter(**writer_kwargs) as writer:
                 for record in product.cells(self.data):
-                    # import pdb; pdb.set_trace()
                     writer.writerow(record)
 
             with open(output_path, 'rb') as output_file:
