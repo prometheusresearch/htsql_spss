@@ -2,3 +2,8 @@
 HTSQL_SPSS Change History
 *************************
 
+
+0.1.1 (2016-06-28)
+==================
+
+* Initial version.

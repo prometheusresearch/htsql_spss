@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='htsql_spss',
-    version='0.1.0',
+    version='0.1.1',
     description='An HTSQL extension that adds basic IBM SPSS support.',
     long_description=open('README.rst', 'r').read(),
     keywords='htsql extension spss sav',
