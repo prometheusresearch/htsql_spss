@@ -17,20 +17,21 @@ Setup::
     
 Check individual table::
 
-    >>> run_query("/individual.sort(id) /:spss", output_path='sandbox/individual.sav')
+    >>> run_query("/individual.sort(id){id(), *} /:spss", output_path='sandbox/individual.sav')
     >>> with SavReader('sandbox/individual.sav') as reader:
     ...     for line in reader:
     ...         print(line)
-    [1.0, 'Q64H3201']
-    [2.0, 'W19K8934']
-    [3.0, 'B78M1629']
-    [4.0, 'K24T0567']
-    [5.0, 'U40L3956']
-    [6.0, 'M20H6038']
-    [7.0, 'W34P0948']
-    [8.0, 'S12T4027']
-    [9.0, 'B39J6014']
-    [10.0, 'R99D0886']
+    ['Q64H3201', 1.0, 'Q64H3201']
+    ['W19K8934', 2.0, 'W19K8934']
+    ['B78M1629', 3.0, 'B78M1629']
+    ['K24T0567', 4.0, 'K24T0567']
+    ['U40L3956', 5.0, 'U40L3956']
+    ['M20H6038', 6.0, 'M20H6038']
+    ['W34P0948', 7.0, 'W34P0948']
+    ['S12T4027', 8.0, 'S12T4027']
+    ['B39J6014', 9.0, 'B39J6014']
+    ['R99D0886', 10.0, 'R99D0886']
+
 
 Check sample table::
 
@@ -73,7 +74,7 @@ Check a nested query::
     [7.0, 4.0, 9.0, 1.0, 'false', None, None, None, None, None, None, None, 'None', 'None']
     [8.0, 1.0, 7.0, 1.0, 'false', None, None, None, None, None, None, None, 'None', 'None']
 
-Check a nested query::
+Check a duplicate column name from a different table::
 
     >>> run_query("/sample.sort(id){code, individual.code} /:spss", output_path='sandbox/sample_individual.sav')
     >>> with SavReader('sandbox/sample_individual.sav') as reader:
@@ -87,3 +88,14 @@ Check a nested query::
     [2.0, 'B39J6014']
     [1.0, 'B39J6014']
     [1.0, 'W34P0948']
+
+Check a calculation::
+
+    >>> run_query("/tube.sort(id){code, volume_amount*2} /:spss", output_path='sandbox/sample_individual.sav')
+    >>> with SavReader('sandbox/sample_individual.sav') as reader:
+    ...     for line in reader:
+    ...         print(line)
+    [1.0, 10.0]
+    [1.0, 10.0]
+    [2.0, 6.0]
+

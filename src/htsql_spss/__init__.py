@@ -10,6 +10,7 @@ except ImportError:
 import datetime
 import math
 import os
+import re
 import savReaderWriter
 import tempfile
 
@@ -22,7 +23,7 @@ from htsql.core.fmt.emit import EmitHeaders, Emit
 from htsql.core.domain import Domain, BooleanDomain, NumberDomain, \
     FloatDomain, DecimalDomain, TextDomain, EnumDomain, DateDomain, \
     TimeDomain, DateTimeDomain, ListDomain, RecordDomain, UntypedDomain, \
-    VoidDomain, IntegerDomain, Profile
+    VoidDomain, IntegerDomain, IdentityDomain, Profile
 from htsql.core.util import listof
 
 
@@ -57,10 +58,29 @@ class ToSPSS(Adapter):
     def __call__(self):
         return self
 
+    def cells(self, data):
+        raise NotImplementedError
+
     def widths(self, data):
         if data is None:
             return [0]
         return [len(self.domain.dump(data))]
+
+    def column_id(self, data):
+        profile = self.profiles[-1]
+
+        if profile.path:
+            column_id = profile.path[-1].table.name + '.' + profile.path[-1].column.name
+        elif profile.header:
+            column_id = profile.header
+        else:
+            column_id = profile.tag
+
+        # sanitize all non-legal characters
+        column_id = re.sub('[^a-zA-Z0-9._$#@]', '_', column_id)
+
+        return column_id
+
 
 
 class RecordToSPSS(ToSPSS):
@@ -171,19 +191,17 @@ class SimpleToSPSS(ToSPSS):
         UntypedDomain,
         TextDomain,
         EnumDomain,
+        IdentityDomain
     )
 
     def sav_config(self, data):
-        sav_config = super(SimpleToSPSS, self).sav_config(data)
+        sav_config = {}
 
-        profile = self.profiles[-1]
-        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
-
-        sav_config['var_names'] = [column_id]
-
+        column_id = self.column_id(data)
         max_len = self.widths(data)[0]
         max_len = min(max_len, SPSS_MAX_STRING_LENGTH)
 
+        sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: max_len}
         sav_config['formats'] = {column_id: 'A' + str(max_len)}
         sav_config['column_widths'] = {column_id: 10}
@@ -198,9 +216,9 @@ class BooleanToSPSS(ToSPSS):
     adapt(BooleanDomain)
 
     def sav_config(self, data):
-        sav_config = super(BooleanToSPSS, self).sav_config(data)
+        sav_config = {}
 
-        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
+        column_id = self.column_id(data)
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 5}
@@ -217,9 +235,9 @@ class IntegerToSPSS(ToSPSS):
     adapt(IntegerDomain)
 
     def sav_config(self, data):
-        sav_config = super(IntegerToSPSS, self).sav_config(data)
+        sav_config = {}
 
-        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
+        column_id = self.column_id(data)
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 0}
@@ -239,9 +257,9 @@ class FloatToSPSS(ToSPSS):
     adapt_many(FloatDomain)
 
     def sav_config(self, data):
-        sav_config = super(FloatToSPSS, self).sav_config(data)
+        sav_config = {}
 
-        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
+        column_id = self.column_id(data)
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 0}
@@ -261,9 +279,9 @@ class DecimalToSPSS(ToSPSS):
     adapt(DecimalDomain)
 
     def sav_config(self, data):
-        sav_config = super(DecimalToSPSS, self).sav_config(data)
+        sav_config = {}
 
-        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
+        column_id = self.column_id(data)
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 0}
@@ -283,9 +301,9 @@ class DateToSPSS(ToSPSS):
     adapt(DateDomain)
 
     def sav_config(self, data):
-        sav_config = super(DateToSPSS, self).sav_config(data)
+        sav_config = {}
 
-        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
+        column_id = self.column_id(data)
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 0}
@@ -306,9 +324,9 @@ class TimeToSPSS(ToSPSS):
     adapt(TimeDomain)
 
     def sav_config(self, data):
-        sav_config = super(TimeToSPSS, self).sav_config(data)
+        sav_config = {}
 
-        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
+        column_id = self.column_id(data)
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 0}
@@ -330,9 +348,9 @@ class DateTimeToSPSS(ToSPSS):
     adapt(DateTimeDomain)
 
     def sav_config(self, data):
-        sav_config = super(DateTimeToSPSS, self).sav_config(data)
+        sav_config = {}
 
-        column_id = self.profiles[-1].path[-1].table.name + '__' + self.profiles[-1].path[-1].column.name
+        column_id = self.column_id(data)
 
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: 0}
