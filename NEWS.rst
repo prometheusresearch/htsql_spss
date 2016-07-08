@@ -3,6 +3,12 @@ HTSQL_SPSS Change History
 *************************
 
 
+0.1.2 (2016-07-08)
+==================
+
+* Fix handling of null values.
+* Fix handling of fields containing string values of varying lengths.
+
 0.1.1 (2016-06-28)
 ==================
 

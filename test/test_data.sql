@@ -50,4 +50,6 @@ COPY tube (id, sample_id, code, volume_amount, volume_unit, location_memo) FROM 
 1,1,1,5,ml,Freezer 1
 2,6,1,5,ml,Freezer 1
 3,6,2,3,ml,Freezer 2
+4,7,1,3,ml,
+5,8,1,3,ml,\N
 \.

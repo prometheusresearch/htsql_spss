@@ -63,8 +63,17 @@ class ToSPSS(Adapter):
 
     def widths(self, data):
         if data is None:
-            return [0]
-        return [len(self.domain.dump(data))]
+            dumped = ''
+        else:
+            dumped = self.domain.dump(data)
+
+        length = len(dumped)
+
+        if length == 0:
+            # SPSS format does not allow 0-length string columns
+            length = 1
+
+        return [length]
 
     def column_id(self, data):
         profile = self.profiles[-1]
@@ -80,7 +89,6 @@ class ToSPSS(Adapter):
         column_id = re.sub('[^a-zA-Z0-9._$#@]', '_', column_id)
 
         return column_id
-
 
 
 class RecordToSPSS(ToSPSS):
@@ -153,16 +161,25 @@ class ListToSPSS(ToSPSS):
         self.width = self.item_to_spss.width
 
     def sav_config(self, list_value):
-        sav_config = super(ListToSPSS, self).sav_config(list_value)
+        sav_config = self.item_to_spss.sav_config(None)
 
-        for item in list_value:
-            item_sav_config = self.item_to_spss.sav_config(item)
-            for var_name in item_sav_config['var_names']:
-                if var_name not in sav_config['var_names']:
-                    sav_config['var_names'].append(var_name)
-            sav_config['var_types'].update(item_sav_config['var_types'])
-            sav_config['formats'].update(item_sav_config['formats'])
-            sav_config['column_widths'].update(item_sav_config['column_widths'])
+        largest_width = 0
+
+        if list_value:
+            for item in list_value:
+                item_sav_config = self.item_to_spss.sav_config(item)
+
+                for var_name in item_sav_config['var_names']:
+                    if var_name not in sav_config['var_names']:
+                        sav_config['var_names'].append(var_name)
+
+                item_width = self.item_to_spss.widths(item)[0]
+                if item_width > largest_width:
+                    largest_width = item_width
+
+                    sav_config['var_types'].update(item_sav_config['var_types'])
+                    sav_config['formats'].update(item_sav_config['formats'])
+                    sav_config['column_widths'].update(item_sav_config['column_widths'])
 
         return sav_config
 
@@ -209,7 +226,7 @@ class SimpleToSPSS(ToSPSS):
         return sav_config
 
     def cells(self, value):
-        yield [value]
+        yield [self.domain.dump(value)]
 
 
 class BooleanToSPSS(ToSPSS):
@@ -438,7 +455,7 @@ class EmitSPSS(Emit):
                 'ioUtf8': True
             }
 
-            with savReaderWriter.SavWriter(**writer_kwargs) as writer:
+            with CustomSavWriter(**writer_kwargs) as writer:
                 for record in product.cells(self.data):
                     writer.writerow(record)
 
@@ -452,3 +469,32 @@ class EmitSPSS(Emit):
 
         finally:
             os.remove(output_path)
+
+class CustomSavWriter(savReaderWriter.SavWriter):
+    """Override of the default SavWriter class that modifies _pyWriteRow to
+    dump None as '' rather than 'None'.
+    """
+
+    def _pyWriterow(self, record):
+        float_ = float
+        encoding = self.encoding
+        pad_string = self.pad_string
+        for i, value in enumerate(record):
+            varName = self.varNames[i]
+            varType = self.varTypes[varName]
+            if varType == 0:
+                try:
+                    value = float_(value)
+                except (ValueError, TypeError):
+                    value = self.sysmis_
+            else:
+                if value is None:
+                    value = ''
+                value = pad_string(value, varType)
+                if self.ioUtf8_ and isinstance(value, unicode):
+                    value = value.encode("utf-8")
+            record[i] = value
+        self.record = record
+
+    def writerow(self, record):
+        self._pyWriterow(record)

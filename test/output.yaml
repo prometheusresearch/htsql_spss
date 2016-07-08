@@ -40,3 +40,5 @@ tests:
     ALTER TABLE
 - sh: psql htsql_spss_test --file ./test/test_data.sql
   stdout: ''
+- sh: dropdb htsql_spss_test
+  stdout: ''
