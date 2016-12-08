@@ -7,6 +7,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+import json
 import datetime
 import math
 import os
@@ -66,7 +67,6 @@ class ToSPSS(Adapter):
             dumped = ''
         else:
             dumped = self.domain.dump(data)
-
         length = len(dumped)
 
         if length == 0:
@@ -116,7 +116,6 @@ class RecordToSPSS(ToSPSS):
             sav_config['var_types'].update(field_sav_config['var_types'])
             sav_config['formats'].update(field_sav_config['formats'])
             sav_config['column_widths'].update(field_sav_config['column_widths'])
-
         return sav_config
 
     def cells(self, record):
@@ -162,25 +161,21 @@ class ListToSPSS(ToSPSS):
 
     def sav_config(self, list_value):
         sav_config = self.item_to_spss.sav_config(None)
-
-        largest_width = 0
-
+        lagest_width = {}
         if list_value:
             for item in list_value:
                 item_sav_config = self.item_to_spss.sav_config(item)
-
-                for var_name in item_sav_config['var_names']:
+                item_width = self.item_to_spss.widths(item)
+                for (idx, var_name) in enumerate(item_sav_config['var_names']):
                     if var_name not in sav_config['var_names']:
                         sav_config['var_names'].append(var_name)
-
-                item_width = self.item_to_spss.widths(item)[0]
-                if item_width > largest_width:
-                    largest_width = item_width
-
-                    sav_config['var_types'].update(item_sav_config['var_types'])
-                    sav_config['formats'].update(item_sav_config['formats'])
-                    sav_config['column_widths'].update(item_sav_config['column_widths'])
-
+                    var_width = item_width[idx]
+                    max_var_width = lagest_width.get(var_name, 0)
+                    if var_width > max_var_width:
+                        lagest_width[var_name] = var_width
+                        sav_config['var_types'][var_name] = item_sav_config['var_types'][var_name]
+                        sav_config['formats'][var_name] = item_sav_config['formats'][var_name]
+                        sav_config['column_widths'][var_name] = item_sav_config['column_widths'][var_name]                    
         return sav_config
 
     def cells(self, list_value):
@@ -217,7 +212,6 @@ class SimpleToSPSS(ToSPSS):
         column_id = self.column_id(data)
         max_len = self.widths(data)[0]
         max_len = min(max_len, SPSS_MAX_STRING_LENGTH)
-
         sav_config['var_names'] = [column_id]
         sav_config['var_types'] = {column_id: max_len}
         sav_config['formats'] = {column_id: 'A' + str(max_len)}
@@ -442,10 +436,8 @@ class EmitSPSS(Emit):
 
     def render(self, stream, product):
         output_file, output_path = tempfile.mkstemp(suffix='.sav')
-
         try:
             sav_config = product.sav_config(self.data)
-
             writer_kwargs = {
                 'savFileName': output_path,
                 'varNames': sav_config['var_names'],
