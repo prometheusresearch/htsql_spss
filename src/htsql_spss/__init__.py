@@ -496,3 +496,5 @@ class CustomSavWriter(savReaderWriter.SavWriter):
             record[i] = value
         self.record = record
 
+    def writerow(self, record):
+        self._pyWriterow(record)
