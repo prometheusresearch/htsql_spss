@@ -7,6 +7,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+import json
 import datetime
 import math
 import os
@@ -83,7 +84,6 @@ class ToSPSS(Adapter):
             column_id = profile.header
         else:
             column_id = profile.tag
-
         # sanitize all non-legal characters
         column_id = re.sub('[^a-zA-Z0-9._$#@]', '_', column_id)
 
@@ -105,12 +105,23 @@ class RecordToSPSS(ToSPSS):
 
     def sav_config(self, record):
         sav_config = super(RecordToSPSS, self).sav_config(record)
-
         if record is None:
             record = [None]*self.width
 
         for item, field_to_spss in zip(record, self.fields_to_spss):
             field_sav_config = field_to_spss.sav_config(item)
+            for var_name in field_sav_config['var_names']:
+                if var_name in sav_config['var_names']:
+                    idx = 1
+                    new_var_name = var_name + '_' + str(idx)
+                    while new_var_name in sav_config['var_names']:
+                        idx += 1
+                        new_var_name = var_name + '_' + str(idx)
+                    var_name_idx = field_sav_config['var_names'].index(var_name)
+                    field_sav_config['var_names'][var_name_idx] = new_var_name
+                    field_sav_config['var_types'][new_var_name] = field_sav_config['var_types'].pop(var_name)
+                    field_sav_config['formats'][new_var_name] = field_sav_config['formats'].pop(var_name)
+                    field_sav_config['column_widths'][new_var_name] = field_sav_config['column_widths'].pop(var_name)
             sav_config['var_names'].extend(field_sav_config['var_names'])
             sav_config['var_types'].update(field_sav_config['var_types'])
             sav_config['formats'].update(field_sav_config['formats'])
@@ -457,7 +468,6 @@ class EmitSPSS(Emit):
                         stream.write(chunk)
                     else:
                         break
-
         finally:
             os.remove(output_path)
 
@@ -487,5 +497,3 @@ class CustomSavWriter(savReaderWriter.SavWriter):
             record[i] = value
         self.record = record
 
-    def writerow(self, record):
-        self._pyWriterow(record)

@@ -15,7 +15,7 @@ tests:
 - sh: psql htsql_spss_test --file ./test/test_data.sql
 - doctest: ./test/verify.rst
 
-- coverage-check: 95.0
+- coverage-check: 90.0
 - coverage-report: ./build/coverage
 
 - sh: dropdb htsql_spss_test

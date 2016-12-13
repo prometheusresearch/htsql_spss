@@ -2,7 +2,8 @@ CREATE SCHEMA spss;
 
 CREATE TABLE individual (
     id integer NOT NULL,
-    code text NOT NULL
+    code text NOT NULL,
+    sex text
 );
 
 CREATE TABLE sample_type (
