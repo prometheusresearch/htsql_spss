@@ -7,7 +7,6 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-import json
 import datetime
 import math
 import os
