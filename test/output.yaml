@@ -8,8 +8,6 @@ tests:
   stdout: ''
 - sh: pip install -q HTSQL-PGSQL>=2.3.3.20160506
   stdout: ''
-- sh: dropdb htsql_spss_test
-  stdout: ''
 - sh: createdb htsql_spss_test
   stdout: ''
 - sh: psql htsql_spss_test --file ./test/test_schema.sql

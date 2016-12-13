@@ -22,17 +22,51 @@ Check individual table::
     ...     print "Header:", reader.header
     ...     for line in reader:
     ...         print(line)
-    Header: ['id__', 'individual.id', 'individual.code']
-    ['Q64H3201', 1.0, 'Q64H3201']
-    ['W19K8934', 2.0, 'W19K8934']
-    ['B78M1629', 3.0, 'B78M1629']
-    ['K24T0567', 4.0, 'K24T0567']
-    ['U40L3956', 5.0, 'U40L3956']
-    ['M20H6038', 6.0, 'M20H6038']
-    ['W34P0948', 7.0, 'W34P0948']
-    ['S12T4027', 8.0, 'S12T4027']
-    ['B39J6014', 9.0, 'B39J6014']
-    ['R99D0886', 10.0, 'R99D0886']
+    Header: ['id__', 'individual.id', 'individual.code', 'individual.sex']
+    ['Q64H3201', 1.0, 'Q64H3201', 'male']
+    ['W19K8934', 2.0, 'W19K8934', 'female']
+    ['B78M1629', 3.0, 'B78M1629', 'female']
+    ['K24T0567', 4.0, 'K24T0567', 'male']
+    ['U40L3956', 5.0, 'U40L3956', 'female']
+    ['M20H6038', 6.0, 'M20H6038', 'female']
+    ['W34P094800000', 7.0, 'W34P094800000', 'male']
+    ['S12T4027', 8.0, 'S12T4027', 'male']
+    ['B39J6014', 9.0, 'B39J6014', 'male']
+    ['R99D0886', 10.0, 'R99D0886', 'male']
+
+    >>> run_query("/individual{code-, sex} /:spss", output_path='sandbox/individual.sav')
+    >>> with SavReader('sandbox/individual.sav') as reader:
+    ...     print "Header:", reader.header
+    ...     for line in reader:
+    ...         print(line)
+    Header: ['individual.code', 'individual.sex']
+    ['W34P094800000', 'male']
+    ['W19K8934', 'female']
+    ['U40L3956', 'female']
+    ['S12T4027', 'male']
+    ['R99D0886', 'male']
+    ['Q64H3201', 'male']
+    ['M20H6038', 'female']
+    ['K24T0567', 'male']
+    ['B78M1629', 'female']
+    ['B39J6014', 'male']
+
+    >>> run_query("/individual{code, code, code} /:spss", output_path='sandbox/individual.sav')
+    >>> with SavReader('sandbox/individual.sav') as reader:
+    ...     print "Header:", reader.header
+    ...     for line in reader:
+    ...         print(line)
+    Header: ['individual.code', 'individual.code_1', 'individual.code_2']
+    ['B39J6014', 'B39J6014', 'B39J6014']
+    ['B78M1629', 'B78M1629', 'B78M1629']
+    ['K24T0567', 'K24T0567', 'K24T0567']
+    ['M20H6038', 'M20H6038', 'M20H6038']
+    ['Q64H3201', 'Q64H3201', 'Q64H3201']
+    ['R99D0886', 'R99D0886', 'R99D0886']
+    ['S12T4027', 'S12T4027', 'S12T4027']
+    ['U40L3956', 'U40L3956', 'U40L3956']
+    ['W19K8934', 'W19K8934', 'W19K8934']
+    ['W34P094800000', 'W34P094800000', 'W34P094800000']
 
 
 Check sample table::
@@ -61,8 +95,8 @@ Check tube table::
     ...         print(line)
     Header: ['tube.id', 'tube.sample_id', 'tube.code', 'tube.volume_amount', 'tube.volume_unit', 'tube.location_memo']
     [1.0, 1.0, 1.0, 5.0, 'ml', 'Freezer 1']
-    [2.0, 6.0, 1.0, 5.0, 'ml', 'Freezer 1']
-    [3.0, 6.0, 2.0, 3.0, 'ml', 'Freezer 2']
+    [2.0, 6.0, 1.0, 5.1, 'ml', 'Freezer 1']
+    [3.0, 6.0, 2.0, None, 'ml', 'Freezer 2']
     [4.0, 7.0, 1.0, 3.0, 'ml', '']
     [5.0, 8.0, 1.0, 3.0, 'ml', '']
 
@@ -79,8 +113,8 @@ Check a nested query::
     [3.0, 1.0, 2.0, 1.0, 'false', None, None, None, None, None, None, None, '', '']
     [4.0, 1.0, 2.0, 2.0, 'false', None, None, None, None, None, None, None, '', '']
     [5.0, 1.0, 9.0, 1.0, 'false', None, None, None, None, None, None, None, '', '']
-    [6.0, 1.0, 9.0, 2.0, 'false', None, None, None, 2.0, 6.0, 1.0, 5.0, 'ml', 'Freezer 1']
-    [None, None, None, None, '', None, None, None, 3.0, 6.0, 2.0, 3.0, 'ml', 'Freezer 2']
+    [6.0, 1.0, 9.0, 2.0, 'false', None, None, None, 2.0, 6.0, 1.0, 5.1, 'ml', 'Freezer 1']
+    [None, None, None, None, '', None, None, None, 3.0, 6.0, 2.0, None, 'ml', 'Freezer 2']
     [7.0, 4.0, 9.0, 1.0, 'false', None, None, None, 4.0, 7.0, 1.0, 3.0, 'ml', '']
     [8.0, 1.0, 7.0, 1.0, 'false', None, None, None, 5.0, 8.0, 1.0, 3.0, 'ml', '']
 
@@ -99,7 +133,7 @@ Check a duplicate column name from a different table::
     ['B39J6014.blood.1', 'B39J6014']
     ['B39J6014.blood.2', 'B39J6014']
     ['B39J6014.dna.1', 'B39J6014']
-    ['W34P0948.blood.1', 'W34P0948']
+    ['W34P094800000.blood.1', 'W34P094800000']
 
 
 Check a calculation::
@@ -111,10 +145,10 @@ Check a calculation::
     ...         print(line)
     Header: ['id__', 'volume_amount_2']
     ['B78M1629.blood.1.1', 10.0]
-    ['B39J6014.blood.2.1', 10.0]
-    ['B39J6014.blood.2.2', 6.0]
+    ['B39J6014.blood.2.1', 10.2]
+    ['B39J6014.blood.2.2', None]
     ['B39J6014.dna.1.1', 6.0]
-    ['W34P0948.blood.1.1', 6.0]
+    ['W34P094800000.blood.1.1', 6.0]
 
 Check a string column containing solely empty (zero-width) values::
 
@@ -134,7 +168,7 @@ Check a string column containing solely null values::
     ...     for line in reader:
     ...         print(line)
     Header: ['id__', 'tube.location_memo']
-    ['W34P0948.blood.1.1', '']
+    ['W34P094800000.blood.1.1', '']
 
 Check a query returning zero rows::
 
