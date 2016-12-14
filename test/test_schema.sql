@@ -44,7 +44,7 @@ CREATE TABLE tube (
 );
 
 ALTER TABLE ONLY demo_medical_history
-    ADD CONSTRAINT demo_medical_history PRIMARY KEY (code);
+    ADD CONSTRAINT demo_medical_history_pk PRIMARY KEY (code);
 ALTER TABLE demo_medical_history CLUSTER ON demo_medical_history_pk;
 ALTER TABLE ONLY demo_medical_history
     ADD CONSTRAINT demo_medical_history_uk UNIQUE (id);
