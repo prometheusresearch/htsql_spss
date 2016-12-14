@@ -16,8 +16,12 @@ tests:
     CREATE TABLE
     CREATE TABLE
     CREATE TABLE
+    CREATE TABLE
     CREATE TYPE
     CREATE TABLE
+    psql:./test/test_schema.sql:47: ERROR:  relation "demo_medical_history" already exists
+    psql:./test/test_schema.sql:48: ERROR:  index "demo_medical_history_pk" for table "demo_medical_history" does not exist
+    ALTER TABLE
     ALTER TABLE
     ALTER TABLE
     ALTER TABLE

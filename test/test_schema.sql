@@ -1,5 +1,11 @@
 CREATE SCHEMA spss;
 
+CREATE TABLE demo_medical_history (
+  id integer NOT NULL,
+  code text NOT NULL,
+  please_indicate_if_you_currently_have_or_have_circulatory text
+);
+
 CREATE TABLE individual (
     id integer NOT NULL,
     code text NOT NULL,
@@ -36,6 +42,12 @@ CREATE TABLE tube (
     volume_unit tube__volume_unit__enum,
     location_memo text
 );
+
+ALTER TABLE ONLY demo_medical_history
+    ADD CONSTRAINT demo_medical_history PRIMARY KEY (code);
+ALTER TABLE demo_medical_history CLUSTER ON demo_medical_history_pk;
+ALTER TABLE ONLY demo_medical_history
+    ADD CONSTRAINT demo_medical_history_uk UNIQUE (id);
 
 ALTER TABLE ONLY individual
     ADD CONSTRAINT individual_pk PRIMARY KEY (code);
