@@ -178,3 +178,12 @@ Check a query returning zero rows::
     ...     for line in reader:
     ...         print(line)
     Header: ['id__', 'tube.location_memo']
+
+Check a query containing long column name::
+
+    >>> run_query("/demo_medical_history{id(), please_indicate_if_you_currently_have_or_have_circulatory} /:spss", output_path='sandbox/long_name.sav')
+    >>> with SavReader('sandbox/long_name.sav') as reader:
+    ...     print "Header:", reader.header
+    ...     for line in reader:
+    ...         print(line)
+    Header: ['id__', 'demo_medical_history.please_indicate_if_you_currently_have_or_h']
