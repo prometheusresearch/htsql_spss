@@ -86,7 +86,7 @@ class ToSPSS(Adapter):
             column_id = profile.tag
         # sanitize all non-legal characters
         column_id = re.sub('[^a-zA-Z0-9._$#@]', '_', column_id)
-        if len(column_id) >= 64:
+        if len(column_id) > 63:
             column_id = self.cut_column_name(column_id)
         return column_id
 
