@@ -186,4 +186,4 @@ Check a query containing long column name::
     ...     print "Header:", reader.header
     ...     for line in reader:
     ...         print(line)
-    Header: ['id__', 'demo_medical_history.please_indicate_if_you_currently_have_or_h']
+    Header: ['id__', 'demo_medical_history.indicate_currently_circulatory']

@@ -25,6 +25,7 @@ from htsql.core.domain import Domain, BooleanDomain, NumberDomain, \
     TimeDomain, DateTimeDomain, ListDomain, RecordDomain, UntypedDomain, \
     VoidDomain, IntegerDomain, IdentityDomain, Profile
 from htsql.core.util import listof
+from .stopwords import STOPWORDS
 
 
 SPSS_MAX_STRING_LENGTH = 32767
@@ -85,8 +86,20 @@ class ToSPSS(Adapter):
             column_id = profile.tag
         # sanitize all non-legal characters
         column_id = re.sub('[^a-zA-Z0-9._$#@]', '_', column_id)
-        if len(column_id) > 64:
-            column_id = column_id[:63]
+        if len(column_id) > 63:
+            column_id = self.cut_column_name(column_id)
+        return column_id
+
+    def cut_column_name(self, column_id):
+        table_name, column_name = column_id.split('.')
+        column_name = column_name.split('_')
+        column_name = '_'.join([word for word in column_name
+                                     if word not in STOPWORDS])
+        column_id = column_name
+        if table_name:
+            column_id = table_name + '.' + column_id
+        if len(column_id) > 63:
+            column_id = column_id[:62]
         return column_id
 
 
@@ -112,11 +125,7 @@ class RecordToSPSS(ToSPSS):
             field_sav_config = field_to_spss.sav_config(item)
             for var_name in field_sav_config['var_names']:
                 if var_name in sav_config['var_names']:
-                    idx = 1
-                    new_var_name = var_name + '_' + str(idx)
-                    while new_var_name in sav_config['var_names']:
-                        idx += 1
-                        new_var_name = var_name + '_' + str(idx)
+                    new_var_name = self.make_unique_name(var_name, sav_config['var_names'])
                     var_name_idx = field_sav_config['var_names'].index(var_name)
                     field_sav_config['var_names'][var_name_idx] = new_var_name
                     field_sav_config['var_types'][new_var_name] = field_sav_config['var_types'].pop(var_name)
@@ -127,6 +136,17 @@ class RecordToSPSS(ToSPSS):
             sav_config['formats'].update(field_sav_config['formats'])
             sav_config['column_widths'].update(field_sav_config['column_widths'])
         return sav_config
+
+    def make_unique_name(self, var_name, var_names, idx=1):
+        if len(var_name) + len(str(idx)) >  63:
+            var_name = var_name[:63-len(str(idx))]
+            idx = 1
+        if var_name not in var_names:
+            return var_name
+        new_var_name = var_name + '_' + str(idx)
+        while new_var_name in var_names:
+            new_var_name = self.make_unique_name(var_name, var_names, idx+1)
+        return new_var_name
 
     def cells(self, record):
         if not self.width:
