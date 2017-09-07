@@ -2,6 +2,11 @@
 HTSQL_SPSS Change History
 *************************
 
+0.2.0 (2017-09-07)
+==================
+
+* Add stop words functionality to reduce the length of the field
+
 
 0.1.2 (2016-07-08)
 ==================
