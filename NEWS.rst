@@ -2,6 +2,13 @@
 HTSQL_SPSS Change History
 *************************
 
+
+0.2.1 (TBD)
+===========
+
+* Changed license to Apache v2.
+
+
 0.2.0 (2017-09-07)
 ==================
 

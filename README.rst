@@ -37,7 +37,8 @@ that will output the results in in IBM SPSS format.
 License/Copyright
 =================
 
-License TBD
+This project is released under the Apache v2 license. See the accompanying
+``LICENSE.rst`` file for details.
 
 Copyright (c) 2016, Prometheus Research, LLC
 

@@ -8,18 +8,18 @@ from setuptools import setup, find_packages
 
 setup(
     name='htsql_spss',
-    version='0.2.0',
+    version='0.2.1',
     description='An HTSQL extension that adds basic IBM SPSS support.',
     long_description=open('README.rst', 'r').read(),
     keywords='htsql extension spss sav',
     author='Prometheus Research, LLC',
     author_email='contact@prometheusresearch.com',
-    license='AGPLv3',
+    license='Apache-2.0',
     classifiers=[
         'Programming Language :: Python :: 2.7',
-        'License :: OSI Approved :: GNU Affero General Public License v3',
+        'License :: OSI Approved :: Apache Software License',
     ],
-    url='https://bitbucket.org/prometheus/htsql_spss',
+    url='https://github.com/prometheusresearch/htsql_spss',
     package_dir={'': 'src'},
     packages=find_packages('src'),
     zip_safe=True,
